@@ -1,0 +1,1201 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  BookOpen, 
+  Users, 
+  CheckCircle, 
+  Clock, 
+  AlertCircle, 
+  FileText, 
+  Award, 
+  Calendar, 
+  Search, 
+  Plus, 
+  Download, 
+  Check, 
+  X, 
+  Edit3, 
+  Trash2, 
+  UserPlus, 
+  Save, 
+  Filter,
+  BarChart3,
+  CheckSquare,
+  Sparkles,
+  Book,
+  HeartHandshake,
+  LogOut,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  GraduationCap
+} from 'lucide-react';
+
+// Data Dummy Awal Kelas & Siswa SMK Budi Murni 2 (TP 2026-2027)
+const INITIAL_CLASSES = ['X TKR 1', 'X RPL 1', 'XI TKJ 1', 'XII AKL 1'];
+
+const INITIAL_STUDENTS = [
+  { id: '101', name: 'Ahmad Raihan', class: 'X TKR 1', nisn: '0061234501', gender: 'L' },
+  { id: '102', name: 'Aisyah Putri Rahmadani', class: 'X TKR 1', nisn: '0061234502', gender: 'P' },
+  { id: '103', name: 'Bagas Prasetyo', class: 'X TKR 1', nisn: '0061234503', gender: 'L' },
+  { id: '104', name: 'Dewi Nur Halizah', class: 'X TKR 1', nisn: '0061234504', gender: 'P' },
+  { id: '105', name: 'Fikri Haikal', class: 'X TKR 1', nisn: '0061234505', gender: 'L' },
+  
+  { id: '201', name: 'Muhammad Rizky', class: 'X RPL 1', nisn: '0061234601', gender: 'L' },
+  { id: '202', name: 'Nabila Zahra', class: 'X RPL 1', nisn: '0061234602', gender: 'P' },
+  { id: '203', name: 'Omar Faruq', class: 'X RPL 1', nisn: '0061234603', gender: 'L' },
+  { id: '204', name: 'Siti Aminah', class: 'X RPL 1', nisn: '0061234604', gender: 'P' },
+
+  { id: '301', name: 'Zackytio Ramadhan', class: 'XI TKJ 1', nisn: '0051234701', gender: 'L' },
+  { id: '302', name: 'Fitriani Syahrul', class: 'XI TKJ 1', nisn: '0051234702', gender: 'P' },
+
+  { id: '401', name: 'Dimas Anggara', class: 'XII AKL 1', nisn: '0041234801', gender: 'L' },
+  { id: '402', name: 'Khadijah Salsabila', class: 'XII AKL 1', nisn: '0041234802', gender: 'P' },
+];
+
+const INITIAL_ATTENDANCE = {
+  '2026-09-15': {
+    '101': 'Hadir', '102': 'Hadir', '103': 'Sakit', '104': 'Hadir', '105': 'Izin',
+    '201': 'Hadir', '202': 'Hadir', '203': 'Hadir', '204': 'Hadir'
+  }
+};
+
+const INITIAL_TASKS = [
+  { id: 'T1', title: 'Hafalan Q.S. Al-Maidah ayat 48', category: 'Hafalan Al-Qur\'an', dueDate: '2026-09-20', maxScore: 100 },
+  { id: 'T2', title: 'Rangkuman Bab 2: Etika & Budi Pekerti Islam', category: 'Teori & Catatan', dueDate: '2026-09-25', maxScore: 100 },
+  { id: 'T3', title: 'Praktik Tatacara Sholat Jenazah', category: 'Praktik Ibadah', dueDate: '2026-10-02', maxScore: 100 },
+];
+
+const INITIAL_TASK_SCORES = {
+  'T1': { '101': 85, '102': 95, '103': 0, '104': 90, '105': 78, '201': 88, '202': 92 },
+  'T2': { '101': 80, '102': 90, '104': 85, '201': 85 }
+};
+
+const INITIAL_EXAM_SCORES = {
+  '101': { atsTeori: 82, atsPraktik: 88, sasPg: 80, sasUraian: 85 },
+  '102': { atsTeori: 90, atsPraktik: 95, sasPg: 92, sasUraian: 90 },
+  '103': { atsTeori: 70, atsPraktik: 75, sasPg: 68, sasUraian: 70 },
+  '104': { atsTeori: 88, atsPraktik: 90, sasPg: 85, sasUraian: 88 },
+  '105': { atsTeori: 75, atsPraktik: 80, sasPg: 72, sasUraian: 75 },
+  '201': { atsTeori: 85, atsPraktik: 87, sasPg: 89, sasUraian: 84 },
+  '202': { atsTeori: 92, atsPraktik: 96, sasPg: 94, sasUraian: 95 }
+};
+
+// Data User Preset untuk Login
+const DEMO_USERS = [
+  { username: 'guru_pai', password: '123456', name: 'Drs. H. Ahmad Dahlan, M.Pd.I', role: 'Guru Pengampu PAI', nip: '19780512 200501 1 004' },
+  { username: 'kepsek', password: '123456', name: 'Hj. Siti Rahmah, M.Si', role: 'Kepala SMK Budi Murni 2', nip: '19720315 199803 2 002' }
+];
+
+export default function App() {
+  // State Autentikasi / Login
+  const [user, setUser] = useState(null); // null jika belum login
+  const [loginForm, setLoginForm] = useState({ username: '', password: '', remember: false });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // State Utama Application
+  const [selectedClass, setSelectedClass] = useState('X TKR 1');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // State Data
+  const [students, setStudents] = useState(INITIAL_STUDENTS);
+  const [attendance, setAttendance] = useState(INITIAL_ATTENDANCE);
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [taskScores, setTaskScores] = useState(INITIAL_TASK_SCORES);
+  const [examScores, setExamScores] = useState(INITIAL_EXAM_SCORES);
+
+  // Modal States
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newStudent, setNewStudent] = useState({ name: '', class: 'X TKR 1', nisn: '', gender: 'L' });
+  const [newTask, setNewTask] = useState({ title: '', category: 'Hafalan Al-Qur\'an', dueDate: '', maxScore: 100 });
+  const [toastMessage, setToastMessage] = useState('');
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  // Handle Login Event
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setLoginError('');
+    
+    const foundUser = DEMO_USERS.find(
+      u => u.username.toLowerCase() === loginForm.username.trim().toLowerCase() && u.password === loginForm.password
+    );
+
+    if (foundUser) {
+      setUser(foundUser);
+      triggerToast(`Selamat Datang, ${foundUser.name}!`);
+    } else {
+      setLoginError('Username atau Password salah. Silakan periksa kembali.');
+    }
+  };
+
+  // Quick Preset Click Handler
+  const handleQuickLogin = (presetUser) => {
+    setLoginForm({ username: presetUser.username, password: presetUser.password, remember: true });
+    setUser(presetUser);
+    setLoginError('');
+    triggerToast(`Berhasil masuk sebagai ${presetUser.role}`);
+  };
+
+  // Handle Logout Event
+  const handleLogout = () => {
+    setUser(null);
+    setLoginForm({ username: '', password: '', remember: false });
+    triggerToast('Anda telah keluar dari aplikasi.');
+  };
+
+  // Filter siswa berdasarkan Kelas & Search
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => 
+      s.class === selectedClass && 
+      s.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [students, selectedClass, searchQuery]);
+
+  // Statistik Dashboard
+  const stats = useMemo(() => {
+    const classStudentIds = students.filter(s => s.class === selectedClass).map(s => s.id);
+    const totalInClass = classStudentIds.length;
+    
+    // Kehadiran hari ini
+    const todayAtt = attendance[currentDate] || {};
+    let hadirCount = 0;
+    classStudentIds.forEach(id => {
+      if (todayAtt[id] === 'Hadir') hadirCount++;
+    });
+
+    const attPercentage = totalInClass > 0 ? Math.round((hadirCount / totalInClass) * 100) : 0;
+
+    // Rata-rata Nilai Akhir
+    let totalNA = 0;
+    let studentWithExamCount = 0;
+
+    classStudentIds.forEach(id => {
+      const score = examScores[id];
+      if (score) {
+        const ats = (score.atsTeori + score.atsPraktik) / 2;
+        const sas = (score.sasPg + score.sasUraian) / 2;
+        const na = (ats * 0.4) + (sas * 0.6); // Bobot 40% ATS, 60% SAS
+        totalNA += na;
+        studentWithExamCount++;
+      }
+    });
+
+    const avgNA = studentWithExamCount > 0 ? (totalNA / studentWithExamCount).toFixed(1) : '-';
+
+    return { totalInClass, hadirCount, attPercentage, avgNA };
+  }, [students, selectedClass, attendance, currentDate, examScores]);
+
+  // Handle Absensi Change
+  const handleAttendanceChange = (studentId, status) => {
+    setAttendance(prev => {
+      const dateRecords = prev[currentDate] || {};
+      return {
+        ...prev,
+        [currentDate]: {
+          ...dateRecords,
+          [studentId]: status
+        }
+      };
+    });
+  };
+
+  const handleBulkAttendance = (status) => {
+    setAttendance(prev => {
+      const dateRecords = prev[currentDate] || {};
+      const updated = { ...dateRecords };
+      filteredStudents.forEach(s => {
+        updated[s.id] = status;
+      });
+      return {
+        ...prev,
+        [currentDate]: updated
+      };
+    });
+    triggerToast(`Semua siswa ${selectedClass} diset ${status}`);
+  };
+
+  // Handle Input Nilai Tugas
+  const handleTaskScoreChange = (taskId, studentId, value) => {
+    const num = Math.min(100, Math.max(0, Number(value) || 0));
+    setTaskScores(prev => ({
+      ...prev,
+      [taskId]: {
+        ...(prev[taskId] || {}),
+        [studentId]: num
+      }
+    }));
+  };
+
+  // Handle Input Nilai ATS & SAS
+  const handleExamScoreChange = (studentId, field, value) => {
+    const num = Math.min(100, Math.max(0, Number(value) || 0));
+    setExamScores(prev => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || { atsTeori: 0, atsPraktik: 0, sasPg: 0, sasUraian: 0 }),
+        [field]: num
+      }
+    }));
+  };
+
+  // Tambah Siswa Baru
+  const handleCreateStudent = (e) => {
+    e.preventDefault();
+    if (!newStudent.name) return;
+    const id = Date.now().toString();
+    setStudents(prev => [...prev, { ...newStudent, id }]);
+    setNewStudent({ name: '', class: selectedClass, nisn: '', gender: 'L' });
+    setShowAddStudent(false);
+    triggerToast('Siswa baru berhasil ditambahkan!');
+  };
+
+  // Tambah Tugas Baru
+  const handleCreateTask = (e) => {
+    e.preventDefault();
+    if (!newTask.title) return;
+    const id = 'T' + (tasks.length + 1);
+    setTasks(prev => [...prev, { ...newTask, id }]);
+    setNewTask({ title: '', category: 'Hafalan Al-Qur\'an', dueDate: '', maxScore: 100 });
+    setShowAddTask(false);
+    triggerToast('Tugas pembelajaran baru berhasil dipublikasikan!');
+  };
+
+  // Delete Siswa
+  const handleDeleteStudent = (id) => {
+    setStudents(prev => prev.filter(s => s.id !== id));
+    triggerToast('Data siswa berhasil dihapus');
+  };
+
+  // HALAMAN LOGIN JIKA BELUM AUTENTIKASI
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-5 z-50 bg-emerald-800 text-amber-300 px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-emerald-600 animate-bounce text-sm">
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
+        {/* Login Card */}
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative z-10">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900 text-white p-6 sm:p-8 text-center border-b border-amber-500/30 relative">
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-950/50 border border-amber-300 mx-auto mb-3">
+              <BookOpen className="w-9 h-9 text-emerald-950 stroke-[2.5]" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-white uppercase">
+              SMK BUDI MURNI 2
+            </h1>
+            <p className="text-xs text-amber-300 font-medium mt-1">
+              Sistem Informasi PAI & Budi Pekerti TP. 2026/2027
+            </p>
+          </div>
+
+          {/* Form Login */}
+          <div className="p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-slate-800 text-center mb-1">Masuk ke Akun Anda</h2>
+            <p className="text-xs text-slate-500 text-center mb-6">Silakan masukkan username dan kata sandi Anda.</p>
+
+            {loginError && (
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Username / NIP</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Masukkan username Anda"
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kata Sandi (Password)</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    required
+                    placeholder="••••••••"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white transition-all"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    checked={loginForm.remember}
+                    onChange={(e) => setLoginForm({ ...loginForm, remember: e.target.checked })}
+                    className="rounded text-emerald-700 focus:ring-emerald-600 border-slate-300"
+                  />
+                  <span>Ingat Saya</span>
+                </label>
+                <a href="#reset" onClick={(e) => { e.preventDefault(); alert('Hubungi Administrator IT SMK Budi Murni 2 untuk reset password.'); }} className="text-emerald-700 font-medium hover:underline">
+                  Lupa Password?
+                </a>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-emerald-800 to-emerald-900 hover:from-emerald-700 hover:to-emerald-800 text-amber-300 font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-950/30 border border-emerald-700 mt-2"
+              >
+                Masuk Sistem PAI
+              </button>
+            </form>
+
+            {/* Quick Login Presets for Easy Demo */}
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center mb-2.5">
+                Uji Coba Cepat (Demo Presets)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {DEMO_USERS.map((u) => (
+                  <button
+                    key={u.username}
+                    onClick={() => handleQuickLogin(u)}
+                    className="p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-left transition-all group"
+                  >
+                    <p className="text-xs font-bold text-slate-700 group-hover:text-emerald-900">{u.role}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">User: {u.username} | Pass: {u.password}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-500 mt-6 text-center">
+          © 2026-2027 SMK Budi Murni 2 • Hak Cipta Dilindungi
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 bg-emerald-800 text-amber-300 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-emerald-600 animate-bounce">
+          <Sparkles className="w-5 h-5 text-amber-300" />
+          <span className="font-medium text-sm">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* TOP BRANDING NAVBAR */}
+      <header className="bg-emerald-950 text-white border-b border-amber-500/30 sticky top-0 z-40 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {/* Branding Logo & Title */}
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-300">
+                <BookOpen className="w-7 h-7 text-emerald-950 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    SMK BUDI MURNI 2
+                  </h1>
+                  <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-400/30 font-medium">
+                    PAI & Budi Pekerti
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-200/80 flex items-center gap-1.5 mt-0.5">
+                  <span>Sistem Informasi Academic TP. 2026/2027</span>
+                  <span className="text-amber-400">•</span>
+                  <span className="text-amber-200 font-medium">Semester Ganjil</span>
+                </p>
+              </div>
+            </div>
+
+            {/* User Profile Info & Rombel Selector */}
+            <div className="flex items-center justify-between sm:justify-end gap-3">
+              {/* Profile Card & Logout Button */}
+              <div className="flex items-center bg-emerald-900/90 rounded-xl px-3 py-1.5 border border-emerald-700/80 gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-400 text-emerald-950 flex items-center justify-center font-bold text-sm shadow">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold text-amber-300 leading-tight">{user.name}</p>
+                  <p className="text-[10px] text-emerald-200">{user.role}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  title="Keluar / Logout"
+                  className="p-1.5 hover:bg-emerald-800 text-emerald-200 hover:text-amber-300 rounded-lg transition-colors border border-transparent hover:border-emerald-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center bg-emerald-900/80 rounded-xl px-3 py-1.5 border border-emerald-700/60 shadow-inner">
+                <Filter className="w-4 h-4 text-amber-400 mr-2" />
+                <span className="text-xs text-emerald-200 mr-2 font-medium">Kelas:</span>
+                <select 
+                  value={selectedClass} 
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="bg-emerald-800 text-amber-300 font-semibold text-sm rounded-lg px-2 py-1 outline-none border border-emerald-600 cursor-pointer focus:ring-2 focus:ring-amber-400"
+                >
+                  {INITIAL_CLASSES.map(cls => (
+                    <option key={cls} value={cls} className="bg-emerald-900 text-white">{cls}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="hidden sm:flex items-center bg-emerald-900/80 rounded-xl px-3 py-1.5 border border-emerald-700/60">
+                <Calendar className="w-4 h-4 text-emerald-300 mr-2" />
+                <input 
+                  type="date" 
+                  value={currentDate}
+                  onChange={(e) => setCurrentDate(e.target.value)}
+                  className="bg-transparent text-xs text-emerald-100 outline-none cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="bg-emerald-900/60 border-t border-emerald-800/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 scrollbar-none">
+              {[
+                { id: 'dashboard', label: 'Dashboard Overview', icon: BarChart3 },
+                { id: 'attendance', label: 'Absensi Kehadiran', icon: CheckSquare },
+                { id: 'tasks', label: 'Tugas Harian & Praktik', icon: Book },
+                { id: 'exams', label: 'Nilai ATS & SAS', icon: Award },
+                { id: 'students', label: 'Data Siswa', icon: Users },
+              ].map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                      isActive 
+                        ? 'bg-amber-500 text-emerald-950 font-bold shadow-md shadow-amber-500/20' 
+                        : 'text-emerald-100 hover:bg-emerald-800/70 hover:text-white'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-950' : 'text-amber-400'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT CONTAINER */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        {/* Global Search Bar & Sub-header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <span>Rombel: <span className="text-emerald-700">{selectedClass}</span></span>
+            </h2>
+            <p className="text-xs text-slate-500">Mata Pelajaran: Pendidikan Agama Islam & Budi Pekerti</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Cari nama siswa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+              />
+            </div>
+            {activeTab === 'students' && (
+              <button
+                onClick={() => setShowAddStudent(true)}
+                className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Tambah Siswa</span>
+              </button>
+            )}
+            {activeTab === 'tasks' && (
+              <button
+                onClick={() => setShowAddTask(true)}
+                className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Tambah Tugas</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* TAB 1: DASHBOARD */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Siswa Terdaftar</p>
+                  <h3 className="text-2xl font-bold text-slate-800">{stats.totalInClass} <span className="text-xs font-normal text-slate-400">siswa</span></h3>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Kehadiran Hari Ini</p>
+                  <h3 className="text-2xl font-bold text-emerald-700">{stats.attPercentage}% <span className="text-xs font-normal text-slate-500">({stats.hadirCount}/{stats.totalInClass})</span></h3>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Tugas Aktif PAI</p>
+                  <h3 className="text-2xl font-bold text-slate-800">{tasks.length} <span className="text-xs font-normal text-slate-400">penugasan</span></h3>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Rata-rata Nilai PAI</p>
+                  <h3 className="text-2xl font-bold text-purple-700">{stats.avgNA}</h3>
+                </div>
+              </div>
+            </div>
+
+            {/* Announcement & Quick Agenda */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-gradient-to-br from-emerald-900 to-emerald-950 text-white p-6 rounded-2xl shadow-md border border-emerald-800 relative overflow-hidden">
+                <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
+                  <HeartHandshake className="w-64 h-64 text-amber-400" />
+                </div>
+                <div className="relative z-10">
+                  <span className="bg-amber-500/20 text-amber-300 text-xs px-3 py-1 rounded-full font-semibold border border-amber-400/30">
+                    Catatan Instruksional Guru PAI
+                  </span>
+                  <h3 className="text-xl font-bold mt-3 mb-2 text-white">Target Capaian Pembelajaran Pekan Ini</h3>
+                  <p className="text-sm text-emerald-100/90 leading-relaxed mb-4">
+                    Assalamu’alaikum Wr. Wb. Bapak/Ibu Guru PAI SMK Budi Murni 2. Mohon memastikan seluruh siswa kelas {selectedClass} telah menyelesaikan penilaian hafalan surah pilihan dan setoran praktik ibadah sholat tepat waktu sebelum memasuki periode Asesmen Tengah Semester (ATS).
+                  </p>
+                  <div className="flex flex-wrap gap-4 text-xs text-emerald-200 border-t border-emerald-800/80 pt-4">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4 text-amber-400" />
+                      <span>KKTP PAI: 75.00</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Book className="w-4 h-4 text-amber-400" />
+                      <span>Fokus Modul: Al-Qur'an & Budi Pekerti</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Summary list */}
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80">
+                <h3 className="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                  <span>Tugas Terdekat</span>
+                  <span className="text-xs font-normal text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Aktif</span>
+                </h3>
+                <div className="space-y-3">
+                  {tasks.slice(0, 3).map(task => (
+                    <div key={task.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-xs font-bold text-slate-700 line-clamp-1">{task.title}</p>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 mt-2">
+                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px]">{task.category}</span>
+                        <span>Deadline: {task.dueDate || 'Sesuai Jadwal'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ABSENSI KEHADIRAN */}
+        {activeTab === 'attendance' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Absensi Kehadiran PAI</h3>
+                <p className="text-xs text-slate-500">Tanggal: <span className="font-semibold text-slate-700">{currentDate}</span> | Kelas: <span className="font-semibold text-emerald-700">{selectedClass}</span></p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => handleBulkAttendance('Hadir')}
+                  className="px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium hover:bg-emerald-200 transition-colors"
+                >
+                  Set Semua Hadir
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Cetak / Export
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/70 text-slate-600 text-xs uppercase font-semibold">
+                    <th className="py-3 px-4 w-12 text-center">No</th>
+                    <th className="py-3 px-4">Nama Siswa</th>
+                    <th className="py-3 px-4 w-28">NISN</th>
+                    <th className="py-3 px-4 text-center">Status Kehadiran Hari Ini</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-slate-400 text-xs">
+                        Tidak ada siswa ditemukan di kelas {selectedClass}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((student, idx) => {
+                      const status = (attendance[currentDate] && attendance[currentDate][student.id]) || '';
+                      return (
+                        <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="py-3 px-4 font-medium text-slate-800">
+                            {student.name}
+                            <span className="ml-2 text-[10px] text-slate-400 font-normal">({student.gender})</span>
+                          </td>
+                          <td className="py-3 px-4 text-xs font-mono text-slate-500">{student.nisn || '-'}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex justify-center items-center gap-1 sm:gap-2">
+                              {[
+                                { key: 'Hadir', label: 'Hadir (H)', color: 'bg-emerald-600 text-white border-emerald-600', unselected: 'hover:bg-emerald-50 text-emerald-700 border-emerald-200' },
+                                { key: 'Izin', label: 'Izin (I)', color: 'bg-amber-500 text-white border-amber-500', unselected: 'hover:bg-amber-50 text-amber-700 border-amber-200' },
+                                { key: 'Sakit', label: 'Sakit (S)', color: 'bg-blue-500 text-white border-blue-500', unselected: 'hover:bg-blue-50 text-blue-700 border-blue-200' },
+                                { key: 'Alpa', label: 'Alpa (A)', color: 'bg-rose-600 text-white border-rose-600', unselected: 'hover:bg-rose-50 text-rose-700 border-rose-200' },
+                              ].map((btn) => (
+                                <button
+                                  key={btn.key}
+                                  onClick={() => handleAttendanceChange(student.id, btn.key)}
+                                  className={`px-2.5 py-1 text-xs rounded-lg border font-medium transition-all ${
+                                    status === btn.key ? btn.color + ' shadow-sm font-bold' : 'bg-white ' + btn.unselected
+                                  }`}
+                                >
+                                  {btn.key}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: TUGAS HARIAN & PRAKTIK */}
+        {activeTab === 'tasks' && (
+          <div className="space-y-6">
+            {/* List Tugas Header & Select */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">Daftar Penugasan PAI & Praktik Ibadah</h3>
+                  <p className="text-xs text-slate-500">Kelola nilai hafalan surah, modul fiqih, dan nilai praktik siswa.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Task Cards + Scoring Matrix */}
+            <div className="grid grid-cols-1 gap-6">
+              {tasks.map(task => (
+                <div key={task.id} className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                  <div className="p-4 bg-emerald-950 text-white flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div>
+                      <span className="bg-amber-500 text-emerald-950 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                        {task.category}
+                      </span>
+                      <h4 className="font-bold text-base mt-1 text-amber-200">{task.title}</h4>
+                    </div>
+                    <div className="text-xs text-emerald-200/80 font-mono">
+                      Batas Waktu: {task.dueDate || 'Tanpa Batas'} | Maks: {task.maxScore} pts
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-slate-500 text-xs">
+                            <th className="py-2 px-3 w-10">No</th>
+                            <th className="py-2 px-3">Nama Siswa</th>
+                            <th className="py-2 px-3 w-36 text-center">Nilai Tugas (0-100)</th>
+                            <th className="py-2 px-3 w-32 text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredStudents.map((s, idx) => {
+                            const currentScore = taskScores[task.id]?.[s.id] ?? '';
+                            const isSubmitted = currentScore !== '' && currentScore > 0;
+                            return (
+                              <tr key={s.id} className="hover:bg-slate-50">
+                                <td className="py-2 px-3 text-xs text-slate-400">{idx + 1}</td>
+                                <td className="py-2 px-3 font-medium text-slate-700">{s.name}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="100"
+                                    value={currentScore}
+                                    onChange={(e) => handleTaskScoreChange(task.id, s.id, e.target.value)}
+                                    placeholder="0"
+                                    className="w-20 text-center font-bold text-emerald-800 bg-slate-50 border border-slate-200 rounded-lg py-1 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-600 outline-none"
+                                  />
+                                </td>
+                                <td className="py-2 px-3 text-center">
+                                  {isSubmitted ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                      <Check className="w-3 h-3" /> Dinilai
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                      Belum Setor
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PENILAIAN ATS & SAS */}
+        {activeTab === 'exams' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Rekap Nilai ATS & SAS (PAI)</h3>
+                <p className="text-xs text-slate-500">Bobot Nilai Akhir: ATS (40%) + SAS (60%) | KKTP Minimal: 75.00</p>
+              </div>
+
+              <button 
+                onClick={() => window.print()}
+                className="px-3 py-1.5 bg-emerald-700 text-white rounded-xl text-xs font-medium hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Cetak Raport PAI
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-emerald-950 text-white text-xs uppercase font-semibold">
+                    <th className="py-3 px-3 w-10 text-center border-r border-emerald-800">No</th>
+                    <th className="py-3 px-3 border-r border-emerald-800">Nama Siswa</th>
+                    <th className="py-3 px-3 text-center border-r border-emerald-800" colSpan={2}>
+                      ATS (Asesmen Tengah Semester)
+                    </th>
+                    <th className="py-3 px-3 text-center border-r border-emerald-800" colSpan={2}>
+                      SAS (Asesmen Akhir Semester)
+                    </th>
+                    <th className="py-3 px-3 text-center w-28 border-r border-emerald-800">Nilai Akhir</th>
+                    <th className="py-3 px-3 text-center w-28">KKTP (75)</th>
+                  </tr>
+                  <tr className="bg-emerald-900 text-emerald-200 text-[11px] border-t border-emerald-800">
+                    <th className="py-1.5 px-2 border-r border-emerald-800"></th>
+                    <th className="py-1.5 px-2 border-r border-emerald-800"></th>
+                    <th className="py-1.5 px-2 text-center w-20 border-r border-emerald-800">Teori</th>
+                    <th className="py-1.5 px-2 text-center w-20 border-r border-emerald-800">Praktik</th>
+                    <th className="py-1.5 px-2 text-center w-20 border-r border-emerald-800">PG</th>
+                    <th className="py-1.5 px-2 text-center w-20 border-r border-emerald-800">Uraian</th>
+                    <th className="py-1.5 px-2 text-center border-r border-emerald-800">Raport</th>
+                    <th className="py-1.5 px-2 text-center">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {filteredStudents.map((s, idx) => {
+                    const score = examScores[s.id] || { atsTeori: 0, atsPraktik: 0, sasPg: 0, sasUraian: 0 };
+                    
+                    const atsAvg = (Number(score.atsTeori || 0) + Number(score.atsPraktik || 0)) / 2;
+                    const sasAvg = (Number(score.sasPg || 0) + Number(score.sasUraian || 0)) / 2;
+                    const finalScore = ((atsAvg * 0.4) + (sasAvg * 0.6)).toFixed(1);
+                    const isTuntas = Number(finalScore) >= 75;
+
+                    return (
+                      <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 text-center text-xs text-slate-400 font-mono border-r border-slate-100">{idx + 1}</td>
+                        <td className="py-2.5 px-3 font-medium text-slate-800 border-r border-slate-100">{s.name}</td>
+
+                        {/* ATS Teori */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={score.atsTeori || ''}
+                            onChange={(e) => handleExamScoreChange(s.id, 'atsTeori', e.target.value)}
+                            className="w-14 text-center font-semibold bg-slate-50 border border-slate-200 rounded py-1 text-xs focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none"
+                            placeholder="0"
+                          />
+                        </td>
+
+                        {/* ATS Praktik */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={score.atsPraktik || ''}
+                            onChange={(e) => handleExamScoreChange(s.id, 'atsPraktik', e.target.value)}
+                            className="w-14 text-center font-semibold bg-slate-50 border border-slate-200 rounded py-1 text-xs focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none"
+                            placeholder="0"
+                          />
+                        </td>
+
+                        {/* SAS PG */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={score.sasPg || ''}
+                            onChange={(e) => handleExamScoreChange(s.id, 'sasPg', e.target.value)}
+                            className="w-14 text-center font-semibold bg-slate-50 border border-slate-200 rounded py-1 text-xs focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none"
+                            placeholder="0"
+                          />
+                        </td>
+
+                        {/* SAS Uraian */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={score.sasUraian || ''}
+                            onChange={(e) => handleExamScoreChange(s.id, 'sasUraian', e.target.value)}
+                            className="w-14 text-center font-semibold bg-slate-50 border border-slate-200 rounded py-1 text-xs focus:bg-white focus:ring-1 focus:ring-emerald-600 outline-none"
+                            placeholder="0"
+                          />
+                        </td>
+
+                        {/* Nilai Akhir */}
+                        <td className="py-2 px-3 text-center font-bold text-slate-800 border-r border-slate-100 bg-slate-50">
+                          <span className={isTuntas ? 'text-emerald-700' : 'text-rose-600'}>
+                            {finalScore}
+                          </span>
+                        </td>
+
+                        {/* Status KKTP */}
+                        <td className="py-2 px-3 text-center">
+                          {isTuntas ? (
+                            <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-300">
+                              TUNTAS
+                            </span>
+                          ) : (
+                            <span className="inline-block bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-rose-300">
+                              REMEDIAL
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: DATA SISWA */}
+        {activeTab === 'students' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Manajemen Data Siswa</h3>
+                <p className="text-xs text-slate-500">Daftar anggota rombel aktif kelas {selectedClass}</p>
+              </div>
+
+              <button
+                onClick={() => setShowAddStudent(true)}
+                className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-xl text-xs font-medium transition-all"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Tambah Siswa Baru</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-600 text-xs uppercase font-semibold">
+                    <th className="py-3 px-4 w-12 text-center">No</th>
+                    <th className="py-3 px-4">Nama Lengkap</th>
+                    <th className="py-3 px-4">NISN</th>
+                    <th className="py-3 px-4">Rombel / Kelas</th>
+                    <th className="py-3 px-4 text-center">Jenis Kelamin</th>
+                    <th className="py-3 px-4 text-center w-24">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {filteredStudents.map((s, idx) => (
+                    <tr key={s.id} className="hover:bg-slate-50">
+                      <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">{idx + 1}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">{s.name}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-slate-500">{s.nisn || '-'}</td>
+                      <td className="py-3 px-4">
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs border border-slate-200">
+                          {s.class}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${s.gender === 'L' ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}`}>
+                          {s.gender === 'L' ? 'Laki-Laki' : 'Perempuan'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteStudent(s.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors"
+                          title="Hapus Siswa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* FOOTER */}
+      <footer className="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
+          <p>© 2026 - 2027 SMK Budi Murni 2. Guru Mata Pelajaran PAI & Budi Pekerti.</p>
+          <p className="flex items-center gap-1 font-mono text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <span>Versi Aplikasi 2.4-PAI</span>
+          </p>
+        </div>
+      </footer>
+
+      {/* MODAL: TAMBAH SISWA */}
+      {showAddStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div className="bg-emerald-950 text-white px-5 py-4 flex justify-between items-center">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-amber-400" />
+                Tambah Data Siswa Baru
+              </h3>
+              <button onClick={() => setShowAddStudent(false)} className="text-slate-300 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateStudent} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap Siswa</label>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="Contoh: Muhammad Ammar"
+                  value={newStudent.name} 
+                  onChange={e => setNewStudent({...newStudent, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">NISN</label>
+                  <input 
+                    type="text" 
+                    placeholder="006xxxxxxx"
+                    value={newStudent.nisn} 
+                    onChange={e => setNewStudent({...newStudent, nisn: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Jenis Kelamin</label>
+                  <select
+                    value={newStudent.gender}
+                    onChange={e => setNewStudent({...newStudent, gender: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                  >
+                    <option value="L">Laki-Laki</option>
+                    <option value="P">Perempuan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Kelas / Rombel Target</label>
+                <select
+                  value={newStudent.class}
+                  onChange={e => setNewStudent({...newStudent, class: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                >
+                  {INITIAL_CLASSES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddStudent(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-medium transition-colors shadow-sm"
+                >
+                  Simpan Siswa
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: TAMBAH TUGAS */}
+      {showAddTask && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div className="bg-emerald-950 text-white px-5 py-4 flex justify-between items-center">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <Book className="w-5 h-5 text-amber-400" />
+                Tambah Penugasan PAI Baru
+              </h3>
+              <button onClick={() => setShowAddTask(false)} className="text-slate-300 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateTask} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Judul Penugasan</label>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="Contoh: Hafalan Surah Al-Hujurat 10-12"
+                  value={newTask.title} 
+                  onChange={e => setNewTask({...newTask, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Kategori Tugas PAI</label>
+                <select
+                  value={newTask.category}
+                  onChange={e => setNewTask({...newTask, category: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                >
+                  <option value="Hafalan Al-Qur'an">Hafalan Al-Qur'an / Hadis</option>
+                  <option value="Praktik Ibadah">Praktik Ibadah (Sholat/Wudhu)</option>
+                  <option value="Teori & Catatan">Teori & Rangkuman Bab</option>
+                  <option value="Diskusi Fiqih">Diskusi Kelompok / Presentation</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Batas Waktu Pengumpulan (Deadline)</label>
+                <input 
+                  type="date" 
+                  value={newTask.dueDate} 
+                  onChange={e => setNewTask({...newTask, dueDate: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-600 outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTask(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-medium transition-colors shadow-sm"
+                >
+                  Publikasikan Tugas
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
